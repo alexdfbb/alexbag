@@ -1,0 +1,76 @@
+import requests
+import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.font_manager import FontProperties
+
+# 设置中文字体
+font = FontProperties(fname="/System/Library/Fonts/STHeiti Medium.ttc")  # Mac 系统字体路径
+# 如果是 Windows 系统，可以使用以下字体路径：
+# font = FontProperties(fname="C:/Windows/Fonts/simhei.ttf")  # Windows 系统字体路径
+
+def get_weather(city, api_key):
+    try:
+        url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={'4cf3bdefc685b168d1ec30f45793cb41'}&units=metric"
+        response = requests.get(url)
+        data = response.json()
+        print(data)  # 打印 API 返回的完整数据
+
+        if data["cod"] != "404":
+            weather = data["weather"][0]["description"]
+            temperature = data["main"]["temp"]
+            humidity = data["main"]["humidity"]
+            print(f"城市: {city}")
+            print(f"天气: {weather}")
+            print(f"温度: {temperature}°C")
+            print(f"湿度: {humidity}%")
+            return weather, temperature, humidity
+        else:
+            print("城市未找到！")
+            return None
+    except Exception as e:
+        print(f"API 请求失败: {e}")
+        return None
+
+def save_to_file(city, weather, temperature, humidity):
+    # 保存天气信息到文件
+    with open("weather_report.txt", "w") as file:
+        file.write(f"城市: {city}\n")
+        file.write(f"天气: {weather}\n")
+        file.write(f"温度: {temperature}°C\n")
+        file.write(f"湿度: {humidity}%\n")
+    print("天气信息已保存到 weather_report.txt")
+
+def save_to_table(city, weather, temperature, humidity):
+    # 创建表格并保存为 CSV 文件
+    data = {
+        "城市": [city],
+        "天气": [weather],
+        "温度 (°C)": [temperature],
+        "湿度 (%)": [humidity]
+    }
+    df = pd.DataFrame(data)
+    df.to_csv("weather_report.csv", index=False)
+    print("天气信息已保存到 weather_report.csv")
+
+def plot_weather(city, temperature, humidity):
+    # 绘制温度和湿度的柱状图
+    labels = ["温度 (°C)", "湿度 (%)"]
+    values = [temperature, humidity]
+
+    plt.bar(labels, values, color=["blue", "green"])
+    plt.title(f"{city} 天气信息", fontproperties=font)  # 设置标题字体
+    plt.ylabel("数值", fontproperties=font)  # 设置 Y 轴标签字体
+    plt.xticks(fontproperties=font)  # 设置 X 轴刻度字体
+    plt.yticks(fontproperties=font)  # 设置 Y 轴刻度字体
+    plt.show()
+
+if __name__ == "__main__":
+    city = input("请输入城市名称: ")
+    api_key = "4cf3bdefc685b168d1ec30f45793cb41"  # 替换为你的 OpenWeatherMap API Key
+
+    result = get_weather(city, api_key)
+    if result:
+        weather, temperature, humidity = result
+        save_to_file(city, weather, temperature, humidity)  # 保存到文本文件
+        save_to_table(city, weather, temperature, humidity)  # 保存到表格文件
+        plot_weather(city, temperature, humidity)  # 绘制图形
